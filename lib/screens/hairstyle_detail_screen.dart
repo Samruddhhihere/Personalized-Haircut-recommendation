@@ -9,15 +9,17 @@ class HairstyleDetailScreen extends StatefulWidget {
   final VoidCallback? onBack;
   final VoidCallback? onTryPreview;
   final VoidCallback? onSave;
+  final String userImagePath;
 
   const HairstyleDetailScreen({
     super.key,
-    this.styleName = 'Layer Cut',
+    required this.styleName,
     this.matchPercent = '94% Match',
-    this.imagePath = 'assets/images/hair_layer_cut.png',
+    required this.imagePath,
     this.onBack,
     this.onTryPreview,
     this.onSave,
+    required this.userImagePath,
   });
 
   @override
@@ -54,7 +56,7 @@ class _HairstyleDetailScreenState extends State<HairstyleDetailScreen> {
               ),
               child: Center(
                 child: Text(
-                  '11. Hairstyle Detail',
+                  'Hairstyle Detail',
                   style: GoogleFonts.playfairDisplay(
                     fontSize: _s(w, 18),
                     fontWeight: FontWeight.w800,
@@ -85,6 +87,7 @@ class _HairstyleDetailScreenState extends State<HairstyleDetailScreen> {
                       onSave: widget.onSave,
                       w: w,
                       h: h,
+                      userImagePath: widget.userImagePath,
                     ),
 
                     SizedBox(height: h * 0.02),
@@ -115,6 +118,19 @@ class _MainCard extends StatelessWidget {
   final VoidCallback? onTryPreview;
   final VoidCallback? onSave;
   final double w, h;
+  final String userImagePath;
+  String getDescription(String hairstyle) {
+    switch (hairstyle) {
+      case 'Wolf Cut':
+        return 'Modern layered style with texture and volume.';
+      case 'Curtain Bangs':
+        return 'Soft face framing bangs.';
+      case 'Layer Cut':
+        return 'Adds movement and volume.';
+      default:
+        return 'Recommended based on your face shape.';
+    }
+  }
 
   const _MainCard({
     required this.imagePath,
@@ -127,6 +143,7 @@ class _MainCard extends StatelessWidget {
     required this.onSave,
     required this.w,
     required this.h,
+    required this.userImagePath,
   });
 
   static const _cardBg = Color(0xFFFBF0F3);
@@ -211,7 +228,9 @@ class _MainCard extends StatelessWidget {
                       width: 36,
                       height: 36,
                       decoration: BoxDecoration(
-                        color: saved ? _pink : Colors.white.withValues(alpha: 0.88),
+                        color: saved
+                            ? _pink
+                            : Colors.white.withValues(alpha: 0.88),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
@@ -272,7 +291,7 @@ class _MainCard extends StatelessWidget {
                 ),
                 SizedBox(height: h * 0.006),
                 Text(
-                  'Balances your face proportions and adds volume around cheeks.',
+                  getDescription(styleName),
                   style: GoogleFonts.playfairDisplay(
                     fontSize: _s(w, 13),
                     fontWeight: FontWeight.w400,
@@ -308,10 +327,16 @@ class _MainCard extends StatelessWidget {
                       child: _FilledButton(
                         label: 'Try Preview',
                         onTap: () {
+                          print("DETAIL SCREEN STYLE:");
+                          print(styleName);
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => const TryOnScreen(),
+                              builder: (_) => TryOnScreen(
+                                hairstyleName: styleName,
+                                imagePath: imagePath,
+                                userImagePath: userImagePath,
+                              ),
                             ),
                           );
                         },

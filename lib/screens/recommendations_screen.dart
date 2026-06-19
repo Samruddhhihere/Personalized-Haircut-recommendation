@@ -22,6 +22,9 @@ class _HairStyle {
 }
 
 class RecommendationsScreen extends StatefulWidget {
+  final String faceShape;
+  final String imagePath;
+
   final VoidCallback? onBack;
   final VoidCallback? onHome;
   final VoidCallback? onExplore;
@@ -32,6 +35,8 @@ class RecommendationsScreen extends StatefulWidget {
 
   const RecommendationsScreen({
     super.key,
+    required this.imagePath,
+    required this.faceShape,
     this.onBack,
     this.onHome,
     this.onExplore,
@@ -63,6 +68,7 @@ class _RecommendationsScreenState extends State<RecommendationsScreen> {
       match: '91% Match',
       imagePath: 'assets/images/hair_curtain_bangs.png',
       category: 'Trendy',
+      
     ),
     _HairStyle(
       name: 'Butterfly Cut',
@@ -83,6 +89,7 @@ class _RecommendationsScreenState extends State<RecommendationsScreen> {
       imagePath: 'assets/images/hair_wolf_cut.png',
       category: 'Trendy',
       saved: true,
+      
     ),
     _HairStyle(
       name: 'Shaggy Layers',
@@ -91,10 +98,65 @@ class _RecommendationsScreenState extends State<RecommendationsScreen> {
       category: 'Short',
     ),
   ];
+  List<_HairStyle> get _filtered {
+    List<_HairStyle> recommended = [];
 
-  List<_HairStyle> get _filtered => _selectedFilter == 'All'
-      ? _allStyles
-      : _allStyles.where((s) => s.category == _selectedFilter).toList();
+    switch (widget.faceShape) {
+      case "Oval":
+        recommended = _allStyles
+            .where(
+              (s) =>
+                  s.name == "Layer Cut" ||
+                  s.name == "Curtain Bangs" ||
+                  s.name == "Long Waves",
+            )
+            .toList();
+        break;
+
+      case "Round":
+        recommended = _allStyles
+            .where((s) => s.name == "Wolf Cut" || s.name == "Long Waves")
+            .toList();
+        break;
+
+      case "Heart":
+        recommended = _allStyles
+            .where(
+              (s) => s.name == "Curtain Bangs" || s.name == "Butterfly Cut",
+            )
+            .toList();
+        break;
+
+      case "Diamond":
+        recommended = _allStyles
+            .where(
+              (s) => s.name == "Butterfly Cut" || s.name == "Shaggy Layers",
+            )
+            .toList();
+        break;
+
+      case "Rectangle":
+        recommended = _allStyles
+            .where((s) => s.name == "Long Waves" || s.name == "Layer Cut")
+            .toList();
+        break;
+
+      case "Square":
+        recommended = _allStyles
+            .where((s) => s.name == "Long Waves" || s.name == "Curtain Bangs")
+            .toList();
+        break;
+
+      default:
+        recommended = _allStyles;
+    }
+
+    if (_selectedFilter == 'All') {
+      return recommended;
+    }
+
+    return recommended.where((s) => s.category == _selectedFilter).toList();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -157,7 +219,12 @@ class _RecommendationsScreenState extends State<RecommendationsScreen> {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (_) => const HairstyleDetailScreen(),
+                                builder: (_) => HairstyleDetailScreen(
+                                  styleName: style.name,
+                                  matchPercent: style.match,
+                                  imagePath: style.imagePath,
+                                  userImagePath: widget.imagePath,
+                                ),
                               ),
                             );
                           },
@@ -241,7 +308,7 @@ class _TopBar extends StatelessWidget {
           ),
           const Spacer(),
           Text(
-            '10. Recommendations',
+            'Recommendations',
             style: GoogleFonts.playfairDisplay(
               fontSize: _s(w, 17),
               fontWeight: FontWeight.w700,

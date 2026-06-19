@@ -5,8 +5,16 @@ import 'recommendations_screen.dart';
 class ResultsScreen extends StatelessWidget {
   final VoidCallback? onBack;
   final VoidCallback? onNext;
+  final String faceShape;
+  final String imagePath;
 
-  const ResultsScreen({super.key, this.onBack, this.onNext});
+  const ResultsScreen({
+    super.key,
+    required this.faceShape,
+    required this.imagePath,
+    this.onBack,
+    this.onNext,
+  });
 
   static const _bg = Color(0xFFF9EFF2);
   static const _cardBg = Color(0xFFFBF0F3);
@@ -52,7 +60,7 @@ class ResultsScreen extends StatelessWidget {
                     SizedBox(height: h * 0.028),
 
                     // ── Face Shape Card ──────────────────────────
-                    _FaceShapeCard(w: w, h: h),
+                    _FaceShapeCard(w: w, h: h, faceShape: faceShape),
 
                     SizedBox(height: h * 0.022),
 
@@ -62,7 +70,7 @@ class ResultsScreen extends StatelessWidget {
                     SizedBox(height: h * 0.022),
 
                     // ── Summary Card ─────────────────────────────
-                    _SummaryCard(w: w),
+                    _SummaryCard(w: w, faceShape: faceShape),
 
                     SizedBox(height: h * 0.032),
 
@@ -73,7 +81,7 @@ class ResultsScreen extends StatelessWidget {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => const RecommendationsScreen(),
+                            builder: (_) => RecommendationsScreen(faceShape: faceShape, imagePath: imagePath),
                           ),
                         );
                       },
@@ -144,7 +152,12 @@ class _AppBar extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────
 class _FaceShapeCard extends StatelessWidget {
   final double w, h;
-  const _FaceShapeCard({required this.w, required this.h});
+  final String faceShape;
+  const _FaceShapeCard({
+    required this.w,
+    required this.h,
+    required this.faceShape,
+  });
 
   static const _cardBg = Color(0xFFFBF0F3);
   static const _borderColor = Color(0xFFEDD5DE);
@@ -177,7 +190,7 @@ class _FaceShapeCard extends StatelessWidget {
                 ),
                 SizedBox(height: h * 0.010),
                 Text(
-                  'Oval',
+                  faceShape,
                   style: GoogleFonts.playfairDisplay(
                     fontSize: _s(w, 36),
                     fontWeight: FontWeight.w800,
@@ -290,10 +303,36 @@ class _FeatureRow extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────
 class _SummaryCard extends StatelessWidget {
   final double w;
-  const _SummaryCard({required this.w});
+  final String faceShape;
+  const _SummaryCard({required this.w, required this.faceShape});
 
   static const _cardBg = Color(0xFFFBF0F3);
   static const _borderColor = Color(0xFFEDD5DE);
+
+  String getFaceDescription(String faceShape) {
+    switch (faceShape.toLowerCase()) {
+      case 'oval':
+        return "Great! Oval face shapes suit a wide range of hairstyles and are highly versatile.";
+
+      case 'round':
+        return "Round face shapes benefit from hairstyles that add length and definition.";
+
+      case 'square':
+        return "Square face shapes look best with soft layers that balance strong jawlines.";
+
+      case 'heart':
+        return "Heart-shaped faces are complemented by styles that balance the forehead and chin.";
+
+      case 'diamond':
+        return "Diamond face shapes look great with styles that add width around the forehead and jawline.";
+
+      case 'oblong':
+        return "Oblong face shapes benefit from hairstyles that create width and balance.";
+
+      default:
+        return "Face shape analysis completed successfully.";
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -308,7 +347,7 @@ class _SummaryCard extends StatelessWidget {
         border: Border.all(color: _borderColor, width: 1.2),
       ),
       child: Text(
-        'Great! Oval face shape suits a wide range of hairstyles.',
+        getFaceDescription(faceShape),
         style: GoogleFonts.playfairDisplay(
           fontSize: _s(w, 14.5),
           fontWeight: FontWeight.w400,

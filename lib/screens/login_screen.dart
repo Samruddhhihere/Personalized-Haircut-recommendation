@@ -294,7 +294,7 @@ class _InputField extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFD8A8B8).withOpacity(0.12),
+            color: const Color(0xFFD8A8B8).withValues(alpha: 0.12),
             blurRadius: 10,
             offset: const Offset(0, 3),
           ),
@@ -431,7 +431,7 @@ class _GradientButtonState extends State<_GradientButton> {
             ),
             boxShadow: [
               BoxShadow(
-                color: widget.gradientEnd.withOpacity(0.32),
+                color: widget.gradientEnd.withValues(alpha: 0.32),
                 blurRadius: 16,
                 offset: const Offset(0, 6),
               ),

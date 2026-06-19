@@ -20,10 +20,10 @@ class _SavedLooksScreenState extends State<SavedLooksScreen> {
   final List<bool> _favourites = [true, false, true, true];
 
   static const List<String> _assetPaths = [
-    'assets/images/look_1.jpg',
-    'assets/images/look_2.jpg',
-    'assets/images/look_3.jpg',
-    'assets/images/look_4.jpg',
+    'assets/images/hair_butterfly_cut.png',
+    'assets/images/hair_curtain_bangs.png',
+    'assets/images/hair_layer_cut.png',
+    'assets/images/hair_wolf_cut.png',
   ];
 
   void _toggleFavourite(int index) {

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'saved_screen.dart';
+import 'dart:io';
+import '../services/ai_tryon_service.dart';
+import '../services/cloudinary_service.dart';
 
 // ─────────────────────────────────────────────────────────────
 // Data model
@@ -10,54 +13,171 @@ class _StyleOption {
   final String thumbnailPath;
   final String beforeImagePath;
   final String afterImagePath;
+  final String hairstyleName;
+  final String imagePath;
 
   const _StyleOption({
     required this.name,
     required this.thumbnailPath,
     required this.beforeImagePath,
     required this.afterImagePath,
+    required this.hairstyleName,
+    required this.imagePath,
   });
 }
 
 class TryOnScreen extends StatefulWidget {
   final VoidCallback? onBack;
   final VoidCallback? onSaveLook;
+  final String hairstyleName;
+  final String imagePath;
+  final String userImagePath;
 
-  const TryOnScreen({super.key, this.onBack, this.onSaveLook});
+  const TryOnScreen({
+    super.key,
+    this.onBack,
+    this.onSaveLook,
+    required this.hairstyleName,
+    required this.imagePath,
+    required this.userImagePath,
+  });
 
   @override
   State<TryOnScreen> createState() => _TryOnScreenState();
 }
 
 class _TryOnScreenState extends State<TryOnScreen> {
-  int _selectedIndex = 0;
+  // ── Hairstyle prompts ────────────────────────────────────────
+  static const Map<String, String> _hairstylePrompts = {
+    'Layer Cut':
+        'Layered haircut with face-framing layers, medium length, natural volume. Keep the face, skin, background and everything else completely unchanged. Only modify the hair.',
+    'Curtain Bangs':
+        'Curtain bangs, middle part, fringe swept to both sides framing the face. Do not change the face, skin tone, background or any other feature. Only modify the hair.',
+    'Wolf Cut':
+        'Wolf cut hairstyle, shaggy layers, voluminous crown, choppy ends. Keep the face, skin, background and everything else completely unchanged. Only modify the hair.',
+    'Butterfly Cut':
+        'Butterfly haircut, long layers, shorter layers near the crown, voluminous and bouncy. Keep the face, skin, background and everything else completely unchanged. Only modify the hair.',
+  };
 
-  static const _styles = [
+  static final List<_StyleOption> _styles = [
     _StyleOption(
       name: 'Layer Cut',
       thumbnailPath: 'assets/images/hair_layer_cut.png',
-      beforeImagePath: 'assets/images/try_on_before.png',
-      afterImagePath: 'assets/images/hair_layer_cut_tryon.png',
+      beforeImagePath: 'assets/images/onboarding1_portrait.png',
+      afterImagePath: 'assets/images/hair_layer_cut.png',
+      hairstyleName: 'Layer Cut',
+      imagePath: 'assets/images/hair_layer_cut.png',
     ),
+
     _StyleOption(
       name: 'Curtain Bangs',
       thumbnailPath: 'assets/images/hair_curtain_bangs.png',
-      beforeImagePath: 'assets/images/try_on_before.png',
-      afterImagePath: 'assets/images/hair_curtain_bangs_tryon.png',
+      beforeImagePath: 'assets/images/onboarding1_portrait.png',
+      afterImagePath: 'assets/images/hair_curtain_bangs.png',
+      hairstyleName: 'Curtain Bangs',
+      imagePath: 'assets/images/hair_curtain_bangs.png',
     ),
+
     _StyleOption(
       name: 'Wolf Cut',
       thumbnailPath: 'assets/images/hair_wolf_cut.png',
-      beforeImagePath: 'assets/images/try_on_before.png',
-      afterImagePath: 'assets/images/hair_wolf_cut_tryon.png',
+      beforeImagePath: 'assets/images/onboarding1_portrait.png',
+      afterImagePath: 'assets/images/hair_wolf_cut.png',
+      hairstyleName: 'Wolf Cut',
+      imagePath: 'assets/images/hair_wolf_cut.png',
     ),
+
     _StyleOption(
-      name: 'Long Waves',
-      thumbnailPath: 'assets/images/hair_long_waves.png',
-      beforeImagePath: 'assets/images/try_on_before.png',
-      afterImagePath: 'assets/images/hair_long_waves_tryon.png',
+      name: 'Butterfly Cut',
+      thumbnailPath: 'assets/images/hair_butterfly_cut.png',
+      beforeImagePath: 'assets/images/onboarding1_portrait.png',
+      afterImagePath: 'assets/images/hair_butterfly_cut.png',
+      hairstyleName: 'Butterfly Cut',
+      imagePath: 'assets/images/hair_butterfly_cut.png',
     ),
   ];
+
+  int _selectedIndex = 0;
+  final CloudinaryService _cloudinaryService = CloudinaryService();
+  final AiTryOnService _aiService = AiTryOnService();
+
+  String? generatedImageUrl;
+  bool isGenerating = false;
+
+  @override
+  void initState() {
+    super.initState();
+    print("TRYON RECEIVED:");
+    print(widget.hairstyleName);
+    final index = _styles.indexWhere((s) => s.name == widget.hairstyleName);
+
+    if (index != -1) {
+      _selectedIndex = index;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      generateHairstylePreview();
+    });
+  }
+
+  Future<void> generateHairstylePreview() async {
+    try {
+      setState(() {
+        isGenerating = true;
+      });
+
+      print("SELECTED HAIRSTYLE:");
+      print(widget.hairstyleName);
+
+      final imageUrl = await _cloudinaryService.uploadImage(
+        File(widget.userImagePath),
+      );
+
+      print("CLOUDINARY URL:");
+      print(imageUrl);
+
+      if (imageUrl == null) {
+        return;
+      }
+
+      // Use descriptive prompt so API applies haircut to hair only
+      final prompt = _hairstylePrompts[widget.hairstyleName] ??
+          'Transform only the hair to a ${widget.hairstyleName} hairstyle. Do not change the face, skin, background or any other feature. Only modify the hair.';
+
+      final orderId = await _aiService.generateHairstyle(
+        imageUrl: imageUrl,
+        prompt: prompt,
+      );
+
+      print("ORDER ID:");
+      print(orderId);
+
+      if (orderId == null) {
+        return;
+      }
+
+      String? resultUrl;
+      for (int i = 0; i < 8; i++) {
+        await Future.delayed(const Duration(seconds: 10));
+        resultUrl = await _aiService.getResult(orderId);
+        if (resultUrl != null) break;
+      }
+
+      print("RESULT URL:");
+      print(resultUrl);
+
+      if (!mounted) return;
+
+      setState(() {
+        generatedImageUrl = resultUrl;
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          isGenerating = false;
+        });
+      }
+    }
+  }
 
   static const _bg = Color(0xFFF9EFF2);
   static const _cardBg = Color(0xFFFBF0F3);
@@ -81,7 +201,7 @@ class _TryOnScreenState extends State<TryOnScreen> {
 
             // ── Screen title ─────────────────────────────────────
             Text(
-              '12. Preview / Try-On',
+              'AI Hairstyle Preview',
               style: GoogleFonts.playfairDisplay(
                 fontSize: _s(w, 18),
                 fontWeight: FontWeight.w800,
@@ -124,34 +244,57 @@ class _TryOnScreenState extends State<TryOnScreen> {
 
                       SizedBox(height: h * 0.016),
 
-                      // ── Split preview ───────────────────────────
+                      // ── Preview image ───────────────────────────
                       Expanded(
                         child: Padding(
                           padding: EdgeInsets.symmetric(horizontal: w * 0.04),
-                          child: _SplitPreview(
-                            beforePath: current.beforeImagePath,
-                            afterPath: current.afterImagePath,
-                            onPrev: _selectedIndex > 0
-                                ? () => setState(() => _selectedIndex--)
-                                : null,
-                            onNext: _selectedIndex < _styles.length - 1
-                                ? () => setState(() => _selectedIndex++)
-                                : null,
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(18),
+                            child: Stack(
+                              fit: StackFit.expand,
+                              children: [
+                                // Show generated result if ready, else show user photo
+                                _buildPreviewImage(current),
+
+                                // Loading overlay while generating
+                                if (isGenerating)
+                                  Container(
+                                    color: Colors.black.withValues(alpha: 0.35),
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        const CircularProgressIndicator(
+                                          color: Color(0xFFCB8FA8),
+                                          strokeWidth: 2.5,
+                                        ),
+                                        const SizedBox(height: 16),
+                                        Text(
+                                          'Generating your look…',
+                                          style: GoogleFonts.playfairDisplay(
+                                            fontSize: _s(w, 14),
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 6),
+                                        Text(
+                                          'This takes about 50 seconds',
+                                          style: GoogleFonts.playfairDisplay(
+                                            fontSize: _s(w, 12),
+                                            color: Colors.white70,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
 
                       SizedBox(height: h * 0.018),
-
-                      // ── Style selector ──────────────────────────
-                      SizedBox(
-                        height: h * 0.115,
-                        child: _StyleSelector(
-                          styles: _styles,
-                          selectedIndex: _selectedIndex,
-                          onSelect: (i) => setState(() => _selectedIndex = i),
-                        ),
-                      ),
 
                       SizedBox(height: h * 0.020),
 
@@ -185,261 +328,35 @@ class _TryOnScreenState extends State<TryOnScreen> {
     );
   }
 
-  double _s(double w, double base) =>
-      (base * w / 390).clamp(base * 0.78, base * 1.28);
-}
-
-// ─────────────────────────────────────────────────────────────
-// Split Before / After Preview
-// ─────────────────────────────────────────────────────────────
-class _SplitPreview extends StatelessWidget {
-  final String beforePath;
-  final String afterPath;
-  final VoidCallback? onPrev;
-  final VoidCallback? onNext;
-
-  const _SplitPreview({
-    required this.beforePath,
-    required this.afterPath,
-    this.onPrev,
-    this.onNext,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final w = MediaQuery.of(context).size.width;
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(18),
-      child: Stack(
-        children: [
-          // Before (left half) + After (right half)
-          Row(
-            children: [
-              Expanded(
-                child: _HalfImage(
-                  imagePath: beforePath,
-                  alignment: Alignment.topLeft,
-                  clipLeft: true,
-                ),
-              ),
-              Expanded(
-                child: _HalfImage(
-                  imagePath: afterPath,
-                  alignment: Alignment.topRight,
-                  clipLeft: false,
-                ),
-              ),
-            ],
-          ),
-
-          // Center divider line
-          Positioned.fill(
-            child: Center(
-              child: Container(
-                width: 2,
-                color: Colors.white.withValues(alpha: 0.7),
-              ),
-            ),
-          ),
-
-          // Left nav arrow
-          Positioned(
-            left: 10,
-            top: 0,
-            bottom: 0,
-            child: Center(
-              child: _NavArrow(icon: Icons.chevron_left_rounded, onTap: onPrev),
-            ),
-          ),
-
-          // Right nav arrow
-          Positioned(
-            right: 10,
-            top: 0,
-            bottom: 0,
-            child: Center(
-              child: _NavArrow(
-                icon: Icons.chevron_right_rounded,
-                onTap: onNext,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _HalfImage extends StatelessWidget {
-  final String imagePath;
-  final Alignment alignment;
-  final bool clipLeft;
-
-  const _HalfImage({
-    required this.imagePath,
-    required this.alignment,
-    required this.clipLeft,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox.expand(
-      child: FittedBox(
+  Widget _buildPreviewImage(_StyleOption current) {
+    if (generatedImageUrl != null) {
+      // Show AI generated result full image
+      return Image.network(
+        generatedImageUrl!,
         fit: BoxFit.cover,
-        alignment: alignment,
-        child: Image.asset(
-          imagePath,
-          errorBuilder: (_, _, _) => Container(
-            width: 200,
-            height: 300,
+        loadingBuilder: (context, child, progress) {
+          if (progress == null) return child;
+          return Container(
             color: const Color(0xFFF0DDE4),
-            child: Icon(
-              Icons.person_outline_rounded,
-              size: 60,
-              color: const Color(0xFFCB8FA8).withValues(alpha: 0.5),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _NavArrow extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback? onTap;
-
-  const _NavArrow({required this.icon, this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedOpacity(
-        opacity: onTap != null ? 1.0 : 0.35,
-        duration: const Duration(milliseconds: 200),
-        child: Container(
-          width: 32,
-          height: 32,
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.88),
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.08),
-                blurRadius: 6,
-                offset: const Offset(0, 2),
+            child: const Center(
+              child: CircularProgressIndicator(
+                color: Color(0xFFCB8FA8),
+                strokeWidth: 2.5,
               ),
-            ],
-          ),
-          child: Icon(icon, size: 22, color: const Color(0xFF1C1C1C)),
-        ),
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────
-// Style Selector — horizontal scroll with thumbnails
-// ─────────────────────────────────────────────────────────────
-class _StyleSelector extends StatelessWidget {
-  final List<_StyleOption> styles;
-  final int selectedIndex;
-  final ValueChanged<int> onSelect;
-
-  const _StyleSelector({
-    required this.styles,
-    required this.selectedIndex,
-    required this.onSelect,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final w = MediaQuery.of(context).size.width;
-
-    return ListView.builder(
-      scrollDirection: Axis.horizontal,
-      padding: EdgeInsets.symmetric(horizontal: w * 0.04),
-      itemCount: styles.length,
-      itemBuilder: (context, i) {
-        final style = styles[i];
-        final selected = i == selectedIndex;
-
-        return GestureDetector(
-          onTap: () => onSelect(i),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            margin: EdgeInsets.only(right: w * 0.030),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Thumbnail
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  width: w * 0.165,
-                  height: w * 0.165,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: selected
-                          ? const Color(0xFF8B2252)
-                          : Colors.transparent,
-                      width: 2.5,
-                    ),
-                    color: const Color(0xFFF0DDE4),
-                    boxShadow: selected
-                        ? [
-                            BoxShadow(
-                              color: const Color(
-                                0xFF8B2252,
-                              ).withValues(alpha: 0.22),
-                              blurRadius: 8,
-                              offset: const Offset(0, 3),
-                            ),
-                          ]
-                        : [],
-                  ),
-                  clipBehavior: Clip.hardEdge,
-                  child: Image.asset(
-                    style.thumbnailPath,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, _, _) => Container(
-                      color: const Color(0xFFF0DDE4),
-                      child: const Icon(
-                        Icons.face_retouching_natural_outlined,
-                        size: 28,
-                        color: Color(0xFFCB8FA8),
-                      ),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 6),
-
-                // Label
-                SizedBox(
-                  width: w * 0.165,
-                  child: Text(
-                    style.name,
-                    textAlign: TextAlign.center,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.playfairDisplay(
-                      fontSize: _s(w, 10.5),
-                      fontWeight: selected ? FontWeight.w700 : FontWeight.w400,
-                      color: selected
-                          ? const Color(0xFF8B2252)
-                          : const Color(0xFF9B7C88),
-                      height: 1.3,
-                    ),
-                  ),
-                ),
-              ],
             ),
-          ),
-        );
-      },
+          );
+        },
+        errorBuilder: (_, _, _) => Image.file(
+          File(widget.userImagePath),
+          fit: BoxFit.cover,
+        ),
+      );
+    }
+
+    // Show user's original photo while generating
+    return Image.file(
+      File(widget.userImagePath),
+      fit: BoxFit.cover,
     );
   }
 

@@ -4,7 +4,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 
 import 'analysis_screen.dart';
-import 'results_screen.dart';
 
 // ─────────────────────────────────────────────
 // Design tokens
@@ -111,10 +110,14 @@ class _UploadPhotoScreenState extends State<UploadPhotoScreen>
     }
   }
 
-  void _setImage(File file) {
+  Future<void> _setImage(File file) async {
     print('SETTING IMAGE: ${file.path}');
+
     setState(() => _selectedImage = file);
-    _buttonController.forward();
+
+    if (mounted) {
+      _buttonController.forward();
+    }
   }
 
   void _showError(String message) {
@@ -131,16 +134,16 @@ class _UploadPhotoScreenState extends State<UploadPhotoScreen>
 
   // ── navigation ───────────────────────────────
   Future<void> _analyzePhoto() async {
-    await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const AnalysisScreen()),
-    );
-
-    if (!mounted) return;
+    if (_selectedImage == null) return;
 
     await Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => const ResultsScreen()),
+      MaterialPageRoute(
+        builder: (_) => AnalysisScreen(
+          image: _selectedImage!,
+          imagePath: _selectedImage!.path,
+        ),
+      ),
     );
   }
 

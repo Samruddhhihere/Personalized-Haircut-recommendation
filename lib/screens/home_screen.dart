@@ -249,7 +249,7 @@ class _TopBar extends StatelessWidget {
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFFCB8FA8).withOpacity(0.15),
+                      color: const Color(0xFFCB8FA8).withValues(alpha: 0.15),
                       blurRadius: 10,
                       offset: const Offset(0, 3),
                     ),
@@ -373,7 +373,7 @@ class _HeroBanner extends StatelessWidget {
               'assets/images/onboarding_portrait.png',
               fit: BoxFit.cover,
               alignment: Alignment.topCenter,
-              errorBuilder: (_, __, ___) => Container(
+              errorBuilder: (_, _, _) => Container(
                 color: const Color(0xFFECC5D4),
                 child: const Icon(Icons.person_outline_rounded,
                     size: 60, color: Color(0xFFCB8FA8)),
@@ -561,7 +561,7 @@ class _RecommendedCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFCB8FA8).withOpacity(0.10),
+            color: const Color(0xFFCB8FA8).withValues(alpha: 0.10),
             blurRadius: 10,
             offset: const Offset(0, 3),
           ),
@@ -577,7 +577,7 @@ class _RecommendedCard extends StatelessWidget {
             child: Image.asset(
               imagePath,
               fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Container(
+              errorBuilder: (_, _, _) => Container(
                 color: const Color(0xFFF0DDE4),
                 child: const Icon(Icons.face_retouching_natural_outlined,
                     size: 32, color: Color(0xFFCB8FA8)),

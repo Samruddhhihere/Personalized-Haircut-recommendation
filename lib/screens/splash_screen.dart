@@ -98,12 +98,10 @@ class _SplashScreenState extends State<SplashScreen>
                     const Spacer(flex: 2),
  
                     // Logo mark
-                    SizedBox(
-                      width: size.width * 0.38,
-                      height: size.width * 0.38,
-                      child: CustomPaint(
-                        painter: _LogoPainter(),
-                      ),
+                    Image.asset(
+                      'assets/images/logo.png',
+                      width: size.width * 0.65,
+                      height: size.width * 0.65,
                     ),
  
                     SizedBox(height: size.height * 0.045),

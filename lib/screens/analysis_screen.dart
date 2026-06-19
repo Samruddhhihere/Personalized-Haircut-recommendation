@@ -1,26 +1,37 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'dart:io';
+import '../services/face_detection_service.dart';
+import 'results_screen.dart';
 
 class AnalysisScreen extends StatefulWidget {
-  /// Called automatically when analysis reaches 100 % — navigate forward here.
-  final VoidCallback? onComplete;
+  final File image;
+
   final VoidCallback? onBack;
+  final String imagePath;
 
   const AnalysisScreen({
     super.key,
-    this.onComplete,
+    required this.image,
+    required this.imagePath,
     this.onBack,
+    
   });
+
 
   @override
   State<AnalysisScreen> createState() => _AnalysisScreenState();
+
 }
 
 class _AnalysisScreenState extends State<AnalysisScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _progressAnim;
+  final FaceDetectionService _faceService = FaceDetectionService();
+
+   String _detectedFaceShape = "Unknown";
 
   // Steps: label, completes at this progress fraction
   static const _steps = [
@@ -42,16 +53,42 @@ class _AnalysisScreenState extends State<AnalysisScreen>
       curve: Curves.easeInOut,
     );
 
-    _controller.addStatusListener((status) {
-      if (status == AnimationStatus.completed) {
-        Future.delayed(const Duration(milliseconds: 400), () {
-          if (mounted) widget.onComplete?.call();
-        });
-      }
-    });
-
     _controller.forward();
+
+    _startAnalysis();
   }
+
+  Future<void> _startAnalysis() async {
+  try {
+    _detectedFaceShape =
+        await _faceService.detectFaceShape(widget.image);
+
+    await Future.delayed(const Duration(seconds: 4));
+
+    if (!mounted) return;
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ResultsScreen(
+          faceShape: _detectedFaceShape,
+          imagePath: widget.imagePath,
+        ),
+      ),
+    );
+  } catch (e) {
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("No face detected"),
+      ),
+    );
+
+    Navigator.pop(context);
+  }
+}
+
 
   @override
   void dispose() {

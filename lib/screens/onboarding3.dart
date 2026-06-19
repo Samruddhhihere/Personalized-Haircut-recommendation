@@ -127,92 +127,9 @@ class _RecommendationIllustration extends StatelessWidget {
     return SizedBox(
       width: areaW,
       height: areaH,
-      child: Stack(
-        clipBehavior: Clip.none,
-        alignment: Alignment.center,
-        children: [
-          // Soft blob background
-          Positioned.fill(child: CustomPaint(painter: _BlobPainter())),
-
-          // Dashed arc arrows
-          Positioned.fill(
-            child: CustomPaint(
-              painter: _ArrowArcPainter(areaW: areaW, areaH: areaH),
-            ),
-          ),
-
-          // Central portrait (bottom half, larger)
-          Positioned(
-            bottom: 0,
-            child: _CentralPortrait(areaW: areaW, areaH: areaH),
-          ),
-
-          // Top card: Curtain Bangs
-          Positioned(
-            top: areaH * 0.01,
-            left: areaW * 0.28,
-            child: _HairCard(
-              label: 'Curtain Bangs',
-              match: '92% Match',
-              imagePath: 'assets/images/onboarding3_portrait.png',
-              width: areaW * 0.38,
-            ),
-          ),
-
-          // Left card: Layer Cut
-          Positioned(
-            top: areaH * 0.30,
-            left: -areaW * 0.04,
-            child: _HairCard(
-              label: 'Layer Cut',
-              match: '94% Match',
-              imagePath: 'assets/images/onboarding3_portrait.png',
-              width: areaW * 0.36,
-            ),
-          ),
-
-          // Right card: Butterfly Cut
-          Positioned(
-            top: areaH * 0.30,
-            right: -areaW * 0.04,
-            child: _HairCard(
-              label: 'Butterfly Cut',
-              match: '90% Match',
-              imagePath: 'assets/images/onboarding3_portrait.png',
-              width: areaW * 0.36,
-            ),
-          ),
-
-          // Sparkles
-          _Sparkle(
-            pulse: pulse,
-            delay: 0.0,
-            left: areaW * 0.10,
-            top: areaH * 0.12,
-            sz: areaW * 0.045,
-          ),
-          _Sparkle(
-            pulse: pulse,
-            delay: 0.4,
-            right: areaW * 0.06,
-            top: areaH * 0.08,
-            sz: areaW * 0.032,
-          ),
-          _Sparkle(
-            pulse: pulse,
-            delay: 0.7,
-            left: areaW * 0.05,
-            top: areaH * 0.52,
-            sz: areaW * 0.028,
-          ),
-          _Sparkle(
-            pulse: pulse,
-            delay: 0.2,
-            right: areaW * 0.04,
-            top: areaH * 0.58,
-            sz: areaW * 0.034,
-          ),
-        ],
+      child: Image.asset(
+        'assets/images/onboarding3_potrait.png',
+        fit: BoxFit.contain,
       ),
     );
   }
@@ -503,10 +420,7 @@ class _Sparkle extends StatelessWidget {
     required this.pulse,
     required this.delay,
     required this.sz,
-    this.left,
-    this.right,
-    this.top,
-  }) : bottom = null;
+  }) : left = null, right = null, top = null, bottom = null;
 
   @override
   Widget build(BuildContext context) {
